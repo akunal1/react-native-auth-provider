@@ -1,39 +1,100 @@
-/**
- *
- * @format
- * @flow
- */
-import 'react-native-gesture-handler';
-import {Provider} from 'react-redux';
-import React, {PureComponent} from 'react';
+import * as React from 'react';
+import {StatusBar} from 'react-native';
+import {NavigationContainer} from '@react-navigation/native';
 import {Provider as PaperProvider} from 'react-native-paper';
 import {AppearanceProvider} from 'react-native-appearance';
-import {NavigationContainer} from '@react-navigation/native';
-import {StatusBar} from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
+import {Provider} from 'react-redux';
 
-import {createStore} from './Store';
 import {ThemeProvider} from './Themes/ThemeProvider';
+import {createStore} from './Store';
 import {ToggleTheme} from './Components/ToggleTheme/ToggleTheme';
-import {RootNavigation} from './Navigation/RootNavigation';
 import {navigationRef} from './Navigation/NavigationService';
+import {AuthNavigation} from './Navigation/RootNavigation';
 
-import {
-  Provider as AuthProvider,
-  Context as AuthContext,
-} from './Navigation/AuthContext';
+import {LoginApi} from './Services/PreAuth/LoginApi';
 
-// create our Redux store
+interface LoginForm {
+  username: string;
+  password: string;
+  grant_type: 'password';
+}
+
+export const AuthContext = React.createContext({
+  login: (values: LoginForm) => {},
+  logout: () => {},
+  state: {},
+});
+
 export const {store} = createStore();
 
-// class App extends PureComponent {
-//   navigator: any;
+export default function App() {
+  const [state, dispatch] = React.useReducer(
+    (prevState: any, action: any) => {
+      switch (action.type) {
+        case 'RESTORE_TOKEN':
+          return {
+            ...prevState,
+            userToken: action.token,
+            isLoading: false,
+          };
+        case 'LOGIN':
+          return {
+            ...prevState,
+            isSignout: false,
+            userToken: action.token,
+          };
+        case 'LOGOUT':
+          return {
+            ...prevState,
+            isSignout: true,
+            userToken: null,
+          };
+      }
+    },
+    {
+      isLoading: true,
+      isSignout: false,
+      userToken: null,
+    },
+  );
 
-const App = () => {
-  const {state} = React.useContext(AuthContext);
-  console.log('context state->', state);
+  React.useEffect(() => {
+    const bootstrapAsync = async () => {
+      let userToken;
+
+      try {
+        userToken = await AsyncStorage.getItem('id_token');
+      } catch (e) {}
+
+      dispatch({type: 'RESTORE_TOKEN', token: userToken});
+    };
+
+    bootstrapAsync();
+  }, []);
+
+  const authContext = React.useMemo(
+    () => ({
+      login: async (params: LoginForm) => {
+        const api = new LoginApi();
+        const response = await api.loginApi(params);
+        if (response.ok) {
+          const id_token = response.data?.access_token;
+          await AsyncStorage.setItem('id_token', id_token || '');
+          dispatch({type: 'LOGIN', token: id_token});
+        }
+      },
+      logout: async () => {
+        await AsyncStorage.removeItem('id_token');
+        dispatch({type: 'LOGOUT'});
+      },
+      state,
+    }),
+    [state],
+  );
 
   return (
-    <AuthProvider>
+    <AuthContext.Provider value={authContext}>
       <Provider store={store}>
         <PaperProvider>
           <AppearanceProvider>
@@ -41,14 +102,12 @@ const App = () => {
               <StatusBar barStyle="default" />
               <ToggleTheme />
               <NavigationContainer ref={navigationRef}>
-                <RootNavigation state={state} />
+                <AuthNavigation state={state} />
               </NavigationContainer>
             </ThemeProvider>
           </AppearanceProvider>
         </PaperProvider>
       </Provider>
-    </AuthProvider>
+    </AuthContext.Provider>
   );
-};
-
-export default App;
+}

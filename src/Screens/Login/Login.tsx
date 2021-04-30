@@ -2,7 +2,6 @@ import React, {useContext} from 'react';
 import {SafeAreaView, View, ScrollView} from 'react-native';
 import {Formik} from 'formik';
 import {connect} from 'react-redux';
-import {Context as AuthContext} from '../../Navigation/AuthContext';
 
 import A1Button from '../../Components/Button/A1Button';
 import A1RowSeparator from '../../Components/RowSeparator/A1RowSeparator';
@@ -17,6 +16,7 @@ import {
 import {A1HelperText} from '../../Components/HelperText/A1HelperText';
 import {authRequest} from '../../Store/Auth/action';
 import {AuthParams} from '../../Types/auth/authTypes';
+import {AuthContext} from '../../App';
 
 interface Props {
   navigation?: any;
@@ -29,7 +29,8 @@ const Login = (props: Props) => {
     navigation && navigation.navigate('Signup');
   };
 
-  const {signin} = useContext(AuthContext);
+  const {login} = useContext(AuthContext);
+
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView>
@@ -38,10 +39,8 @@ const Login = (props: Props) => {
             <Formik
               initialValues={loginInitialValue}
               validationSchema={loginValidationSchema}
-              onSubmit={values => {
-                console.log('inside submit');
-
-                return signin({
+              onSubmit={async values => {
+                await login({
                   ...values,
                   grant_type: 'password',
                 });
@@ -53,21 +52,22 @@ const Login = (props: Props) => {
                 values,
                 errors,
                 touched,
+                isSubmitting,
               }) => (
                 <>
                   <A1TextInput
                     label="Email"
                     textContentType="emailAddress"
                     placeholder="Enter your email id"
-                    onChangeText={handleChange('email')}
-                    onBlur={handleBlur('email')}
-                    value={values.email}
-                    error={!!errors.email && !!touched.email}
+                    onChangeText={handleChange('username')}
+                    onBlur={handleBlur('username')}
+                    value={values.username}
+                    error={!!errors.username && !!touched.username}
                   />
                   <A1HelperText
-                    title={errors.email}
+                    title={errors.username}
                     type="error"
-                    visible={!!errors.email && !!touched.email}
+                    visible={!!errors.username && !!touched.username}
                     iconName="envelope"
                   />
                   <A1TextInput
@@ -89,7 +89,10 @@ const Login = (props: Props) => {
 
                   <View style={styles.loginBtnSection}>
                     <A1Button>Forgot Password?</A1Button>
-                    <A1Button mode="contained" onPress={handleSubmit}>
+                    <A1Button
+                      mode="contained"
+                      onPress={handleSubmit}
+                      disabled={isSubmitting}>
                       LOGIN
                     </A1Button>
                   </View>

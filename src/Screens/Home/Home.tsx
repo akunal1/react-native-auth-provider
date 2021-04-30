@@ -1,9 +1,10 @@
-import React, {memo} from 'react';
+import React, {memo, useContext} from 'react';
+import {AuthContext} from '../../App';
 import A1Button from '../../Components/Button/A1Button';
 import A1Text from '../../Components/Text/A1Text';
-import {logout} from '../../Navigation/tokenValidator';
 
 const Profile = () => {
+  const {logout} = useContext(AuthContext);
   return (
     <>
       <A1Text>HOME PAGE PLACEHOLDER</A1Text>

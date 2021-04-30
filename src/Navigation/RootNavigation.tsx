@@ -4,24 +4,15 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import RootContainer from '../Containers/RootContainer';
 import {Signup} from '../Screens/Signup/SignupForm';
 import Home from '../Screens/Home/Home';
-import authTokenValidator from './tokenValidator';
 import A1Text from '../Components/Text/A1Text';
 import Profile from '../Screens/Home/Profile';
+import SplashScreen from '../Screens/Splash/SplashScreen';
 
 const RootStack = createStackNavigator();
 
-export const RootNavigation3 = () => {
-  let route = '';
-  let isAuth;
-  (async () => {
-    isAuth = await authTokenValidator();
-  })();
-  console.log('isAuth', isAuth);
-  route = !isAuth ? 'Login' : 'Home';
-
+export const RootNavigation = () => {
   return (
     <RootStack.Navigator
-      initialRouteName={route}
       screenOptions={{
         cardShadowEnabled: true,
       }}>
@@ -30,33 +21,19 @@ export const RootNavigation3 = () => {
         component={RootContainer}
         options={{headerShown: false}}
       />
-      <RootStack.Screen name="Signup" component={Signup} />
-      <RootStack.Screen name="Home" component={Home} />
-    </RootStack.Navigator>
-  );
-};
-
-const AuthStack = createStackNavigator();
-const AuthNavigation = () => {
-  return (
-    <AuthStack.Navigator>
-      <AuthStack.Screen
-        options={{headerShown: false}}
-        name="Signin"
-        component={RootContainer}
-      />
-      <AuthStack.Screen
-        options={{headerShown: false}}
+      <RootStack.Screen
         name="Signup"
         component={Signup}
+        options={{headerShown: false}}
       />
-    </AuthStack.Navigator>
+    </RootStack.Navigator>
   );
 };
 
 const Tab = createBottomTabNavigator();
 
-const HomeNavigation = () => {
+// TODO : WIP
+export const HomeNavigation = () => {
   return (
     <Tab.Navigator
       screenOptions={({route}) => ({
@@ -69,11 +46,6 @@ const HomeNavigation = () => {
               break;
             case 'Tab2':
               iconName = focused ? 'ios-add-circle' : 'ios-add-circle-outline';
-              break;
-            case 'Tab3':
-              iconName = focused
-                ? 'ios-information-circle'
-                : 'ios-information-circle-outline';
               break;
           }
 
@@ -91,27 +63,30 @@ const HomeNavigation = () => {
   );
 };
 
-const Stack = createStackNavigator();
-export const RootNavigation = ({state}) => {
-  console.log('state', state);
+const AuthStack = createStackNavigator();
 
+export const AuthNavigation = ({state}: any) => {
   return (
-    <Stack.Navigator>
-      {!state?.token ? (
-        <>
-          <Stack.Screen
-            options={{headerShown: false}}
-            name="Login"
-            component={AuthNavigation}
-          />
-        </>
-      ) : (
-        <Stack.Screen
+    <AuthStack.Navigator>
+      {state.isLoading ? (
+        <AuthStack.Screen
+          name="Splash"
           options={{headerShown: false}}
+          component={SplashScreen}
+        />
+      ) : state.userToken == null ? (
+        <AuthStack.Screen
+          name="SignIn"
+          options={{headerShown: false}}
+          component={RootNavigation}
+        />
+      ) : (
+        <AuthStack.Screen
           name="Home"
+          options={{headerShown: false}}
           component={HomeNavigation}
         />
       )}
-    </Stack.Navigator>
+    </AuthStack.Navigator>
   );
 };
