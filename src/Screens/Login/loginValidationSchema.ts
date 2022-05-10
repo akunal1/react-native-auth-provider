@@ -8,6 +8,6 @@ export const loginValidationSchema = Yup.object().shape({
 });
 
 export const loginInitialValue = {
-  username: 'aishwaryadas28@gmail.com',
-  password: '123456',
+  username: '',
+  password: '',
 };
